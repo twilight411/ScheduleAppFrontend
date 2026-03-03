@@ -1,0 +1,456 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/spirit_type.dart';
+import '../providers/chat_provider.dart';
+import '../widgets/chat_bubble.dart';
+import '../utils/resource_manager.dart';
+import '../pages/wish_bottle_page.dart';
+
+/// AI 对话浮层组件
+/// 
+/// 对应 iOS 的 EnhancedAIChatView：
+/// - 容器从顶部40开始，到底部（containerView.topAnchor = topAnchor + 40）
+/// - 小精灵容器中心Y对齐到容器顶部（spiritsContainerView.centerY = containerView.topAnchor）
+/// - 展开按钮在容器顶部中央（expandButton.centerY = containerView.topAnchor + 40）
+/// - 群聊/私聊按钮在容器顶部右侧（chatModeButton.centerY = containerView.topAnchor）
+/// - 许愿瓶在容器底部左侧，只在展开时显示
+/// - 输入框在许愿瓶右侧
+class AIChatOverlay extends StatefulWidget {
+  const AIChatOverlay({
+    super.key,
+    this.onExpandedChanged,
+  });
+  
+  /// 展开状态变化回调
+  final ValueChanged<bool>? onExpandedChanged;
+
+  @override
+  State<AIChatOverlay> createState() => _AIChatOverlayState();
+}
+
+class _AIChatOverlayState extends State<AIChatOverlay> {
+  late TextEditingController _textController;
+  late ScrollController _scrollController;
+  final FocusNode _focusNode = FocusNode();
+  bool _isExpanded = false;
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _textController = TextEditingController();
+    _scrollController = ScrollController();
+    
+    // 监听文本变化
+    _textController.addListener(() {
+      final hasText = _textController.text.trim().isNotEmpty;
+      if (_hasText != hasText) {
+        setState(() {
+          _hasText = hasText;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _scrollController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  /// 切换展开/收起
+  void _toggleExpand() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+    
+    // 通知外部展开状态变化
+    widget.onExpandedChanged?.call(_isExpanded);
+    
+    if (_isExpanded) {
+      _scrollToBottom();
+    }
+  }
+
+  /// 滚动到底部
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  /// 发送消息
+  Future<void> _sendMessage() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty) return;
+
+    final chatProvider = context.read<ChatProvider>();
+    if (chatProvider.isSending) return;
+
+    try {
+      _textController.clear();
+      setState(() {
+        _hasText = false;
+      });
+      
+      await chatProvider.sendMessage(text);
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('发送消息失败：$e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ChatProvider>(
+      builder: (context, chatProvider, _) {
+        // 监听消息变化，自动滚动到底部
+        final messageCount = chatProvider.messages.length;
+        if (messageCount > 0 && _isExpanded) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToBottom();
+          });
+        }
+
+        // iOS: aiChatView从底部开始，高度120（收起）或400（展开）
+        // iOS: containerView.topAnchor = topAnchor + 40（相对于aiChatView的顶部）
+        // 所以containerView从aiChatView顶部+40开始，到aiChatView底部结束
+        return Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            height: _isExpanded ? 400 : 120, // iOS: aiChatHeightConstraint = 120/400
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // 主容器（带背景图）
+                // iOS: containerView从topAnchor + 40开始，到底部
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 40, // iOS: containerView.topAnchor = topAnchor + 40
+                  bottom: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(ResourceManager.backgrounds.aiChat),
+                        fit: BoxFit.cover,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // 聊天消息列表（展开时显示）
+                          // iOS: chatScrollView.topAnchor = containerView.topAnchor + 70
+                          if (_isExpanded)
+                            Positioned(
+                              top: 70,
+                              left: 15,
+                              right: 15,
+                              bottom: 60, // 为输入区域留出空间
+                              child: chatProvider.messages.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        '开始和 AI 精灵聊天吧～',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      controller: _scrollController,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      itemCount: chatProvider.messages.length,
+                                      itemBuilder: (context, index) {
+                                        final message = chatProvider.messages[index];
+                                        return ChatBubble(message: message);
+                                      },
+                                    ),
+                            ),
+                          
+                          // 输入区域（展开时显示）
+                          // iOS: inputContainerView.leadingAnchor = wishBottleButton.trailingAnchor + 10
+                          // iOS: inputContainerView.bottomAnchor = containerView.bottomAnchor - 10
+                          // 容器从top: 40开始，到底部，所以输入框应该在容器底部-10
+                          if (_isExpanded)
+                            Positioned(
+                              left: 69, // 许愿瓶宽度44 + 间距10 + 左边距15 = 69
+                              right: 15,
+                              bottom: 10, // 相对于容器底部
+                              child: Container(
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                                child: Row(
+                                  children: [
+                                    // 输入框
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _textController,
+                                        focusNode: _focusNode,
+                                        enabled: !chatProvider.isSending,
+                                        decoration: InputDecoration(
+                                          hintText: '和小精灵们聊聊...',
+                                          border: InputBorder.none,
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 15,
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                        textInputAction: TextInputAction.send,
+                                        onSubmitted: chatProvider.isSending ? null : (_) => _sendMessage(),
+                                      ),
+                                    ),
+                                    // 发送按钮
+                                    if (chatProvider.isSending)
+                                      Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              Theme.of(context).primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.send,
+                                          color: _hasText 
+                                              ? Theme.of(context).primaryColor 
+                                              : Colors.grey,
+                                        ),
+                                        onPressed: _hasText ? _sendMessage : null,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                  
+                // 小精灵容器（中心Y对齐到容器顶部）
+                // iOS: spiritsContainerView.centerYAnchor = containerView.topAnchor
+                // 为了让精灵更大、更贴近卡片顶部，这里略微调整高度和位置
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0, // 让更大尺寸的精灵中心靠近 containerView 顶部
+                  height: 80,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // iOS实现：xPos = startX + index * spacing
+                      // 这里适当加大间距，避免太挤，同时放大精灵尺寸
+                      ...SpiritType.values.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final spirit = entry.value;
+                        final isSelected = !chatProvider.isGroupChat &&
+                            chatProvider.selectedSpirit == spirit;
+
+                        // 计算xPos：起始 15，每个精灵间隔 55
+                        final xPos = 15.0 + index * 55.0;
+
+                        return Positioned(
+                          left: xPos,
+                          top: 0,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (!chatProvider.isGroupChat) {
+                                chatProvider.selectSpiritForPrivateChat(spirit);
+                              }
+                            },
+                            onLongPress: () {
+                              // TODO: 显示精灵卡片
+                            },
+                            child: SizedBox(
+                              width: 72,
+                              height: 72,
+                              child: AnimatedScale(
+                                scale: isSelected ? 1.15 : 1.0,
+                                duration: const Duration(milliseconds: 300),
+                                child: AnimatedOpacity(
+                                  opacity: isSelected || chatProvider.isGroupChat ? 1.0 : 0.6,
+                                  duration: const Duration(milliseconds: 300),
+                                  child: Image.asset(
+                                    ResourceManager.getSpiritIcon(spirit),
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(
+                                        spirit.icon,
+                                        size: 48,
+                                        color: spirit.color,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // 展开/收起按钮（在容器顶部中央）
+              // iOS: expandButton.centerYAnchor = containerView.topAnchor + 40
+              // 容器从top: 40开始，所以按钮centerY应该在40 + 40 = 80位置
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 50, // 40 + 40 - 30/2 = 50，使按钮中心Y对齐到80位置
+                child: Center(
+                  child: GestureDetector(
+                    onTap: _toggleExpand,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      color: Colors.transparent,
+                      child: Image.asset(
+                        _isExpanded 
+                            ? ResourceManager.aiChat.arrowDown 
+                            : ResourceManager.aiChat.arrowUp,
+                        width: 30,
+                        height: 30,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            _isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                            color: Colors.grey[700],
+                            size: 24,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // 群聊/私聊切换按钮（夹子，在容器顶部右侧）
+              // iOS: chatModeButton.centerYAnchor = containerView.topAnchor
+              // 容器从top: 40开始，所以按钮centerY应该在40位置
+              Positioned(
+                right: 15,
+                top: 10, // 40 - 44/2 = 18，但为了对齐，使用10
+                child: GestureDetector(
+                  onTap: () {
+                    chatProvider.toggleChatMode();
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        chatProvider.isGroupChat 
+                            ? ResourceManager.aiChat.groupChat 
+                            : ResourceManager.aiChat.privateChat,
+                        width: 24,
+                        height: 24,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            chatProvider.isGroupChat ? Icons.group : Icons.person,
+                            size: 24,
+                            color: Colors.grey[700],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // 许愿瓶按钮（在容器底部左侧，只在展开时显示）
+              // iOS: wishBottleButton.leadingAnchor = containerView.leadingAnchor + 15
+              // iOS: wishBottleButton.bottomAnchor = containerView.bottomAnchor - 10
+              // 容器从top: 40开始，到底部，所以许愿瓶应该在容器底部-10
+              Positioned(
+                left: 15,
+                bottom: 10, // 相对于容器底部
+                child: AnimatedOpacity(
+                    opacity: _isExpanded ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 400),
+                    child: GestureDetector(
+                      onTap: () {
+                        // 跳转到愿望瓶页面（全屏）
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const WishBottlePage(),
+                          ),
+                        );
+                      },
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Image.asset(
+                          ResourceManager.calendar.wishBottle,
+                          width: 44,
+                          height: 44,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.auto_awesome,
+                              size: 44,
+                              color: Colors.purple,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
