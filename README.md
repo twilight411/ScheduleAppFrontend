@@ -1,16 +1,19 @@
-# schedule_app_flutter
+# ScheduleAppFrontend
 
-A new Flutter project.
+光合日历前端仓库（Flutter 项目 `schedule_app_flutter`）
 
-## Getting Started
+## 简介
 
-This project is a starting point for a Flutter application.
+本仓库包含光合日历的 Flutter 前端代码，用于构建移动端应用。
 
-A few resources to get you started if this is your first Flutter project:
+## 开发
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. 安装 Flutter SDK（3.x 及以上版本）
+2. 在项目根目录执行：
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+flutter run
+```
+
+更多 Flutter 相关文档可参考官方文档：`https://docs.flutter.dev/`
