@@ -65,3 +65,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter project metadata (per machine)
+.metadata
+
+# Android local configuration (keystore paths, SDK location, etc.)
+/android/local.properties
+
+# VS Code / Cursor workspace settings (per developer)
+.vscode/
+
+# OS-specific
+Thumbs.db
