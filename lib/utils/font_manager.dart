@@ -10,10 +10,12 @@ class FontManager {
   static TextStyle customFont({
     required double size,
     FontWeight weight = FontWeight.normal,
+    FontStyle style = FontStyle.normal,
   }) {
     return TextStyle(
       fontSize: size,
       fontWeight: weight,
+      fontStyle: style,
     );
   }
 
@@ -22,11 +24,13 @@ class FontManager {
     required double size,
     required Color color,
     FontWeight weight = FontWeight.normal,
+    FontStyle style = FontStyle.normal,
   }) {
     return TextStyle(
       fontSize: size,
       fontWeight: weight,
       color: color,
+      fontStyle: style,
     );
   }
 }

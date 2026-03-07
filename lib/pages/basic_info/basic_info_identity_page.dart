@@ -26,11 +26,12 @@ class BasicInfoIdentityPage extends StatelessWidget {
   static const Color _green = Color(0xFF234434);
 
   /// 四个选项的散落位置（占屏幕宽高的比例）。[左, 上]，可微调
+  /// 想让四个字整体上移：统一减小下面几行里的「上」这个数值（第二个参数）。
   static const List<List<double>> _positions = [
-    [0.18, 0.36], // 学生 - 左中上
-    [0.62, 0.32], // 自由职业者 - 右中上
-    [0.12, 0.52], // 其他 - 左下
-    [0.58, 0.48], // 上班族 - 右下
+    [0.18, 0.14], // 学生 - 再稍微靠上，与「你现在是」距离更近
+    [0.62, 0.10], // 自由职业者 - 同步上移
+    [0.12, 0.30], // 其他 - 同步上移
+    [0.58, 0.26], // 上班族 - 同步上移
   ];
 
   @override
@@ -52,7 +53,7 @@ class BasicInfoIdentityPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildTopBar(context),
-                const SizedBox(height: 24),
+                const SizedBox(height: 150), // 调整「你现在是」距顶部的间距（数值越大越靠下）
                 Center(
                   child: Text(
                     '你现在是',

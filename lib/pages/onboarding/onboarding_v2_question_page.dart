@@ -58,6 +58,12 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
   /// 描述文字更浅的绿
   static const Color _subGreen = Color(0xFF558B2F);
 
+  // 顶部两行问题文字大小：只影响
+  // onboarding_v2_flow_page.dart / onboarding_flow_page.dart 传入的 questionLine1/2
+  // 想单独调第四个问题界面的这两行字，就改下面两个数。
+  static const double _kQuestionLine1Size = 24.0; // 「如果给你接下来的这一年」
+  static const double _kQuestionLine2Size = 24.0; // 「定一个关键词,你希望是」
+
   bool _customEditing = false;
   final TextEditingController _customController = TextEditingController();
   final FocusNode _customFocus = FocusNode();
@@ -184,7 +190,7 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
             widget.questionLine1,
             textAlign: TextAlign.center,
             style: FontManager.customFontWithColor(
-              size: 20,
+              size: _kQuestionLine1Size, // 顶部第一行字号
               color: _darkGreen,
               weight: FontWeight.w600,
             ),
@@ -194,7 +200,7 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
             widget.questionLine2,
             textAlign: TextAlign.center,
             style: FontManager.customFontWithColor(
-              size: 20,
+              size: _kQuestionLine2Size, // 顶部第二行字号
               color: _darkGreen,
               weight: FontWeight.w600,
             ),
@@ -211,14 +217,14 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
     // 调位置：改下面 positions 的系数即可。例如 0.22 改大则下移/右移，改小则上移/左移。
     // 四个预设：左上、右上、左下、右下
     final positions = [
-      Offset(w * 0.22, h * 0.18), // 突破 左上
-      Offset(w * 0.70, h * 0.30), // 修复 右上
-      Offset(w * 0.20, h * 0.60), // 探索 左下
-      Offset(w * 0.70, h * 0.65), // 稳定 右下
+      Offset(w * 0.30, h * 0.13), // 突破 左上
+      Offset(w * 0.78, h * 0.25), // 修复 右上
+      Offset(w * 0.27, h * 0.55), // 探索 左下
+      Offset(w * 0.78, h * 0.60), // 稳定 右下
     ];
     // 「自定义」位置：改下面两个系数即可。0.5=水平居中，改小左移、改大右移；0.72=距顶 72%，改小上移、改大下移
     const double kCustomPosX = 0.45;
-    const double kCustomPosY = 0.95;
+    const double kCustomPosY = 0.90;
     const optionWidth = 120.0;
     const optionHeight = 56.0;
 
@@ -281,7 +287,7 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
               counterText: '',
             ),
             style: FontManager.customFontWithColor(
-              size: 18,
+              size: 20,
               color: _darkGreen,
               weight: FontWeight.w600,
             ),
@@ -332,24 +338,30 @@ class _OptionText extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: FontManager.customFontWithColor(
-                size: 18,
+                size: 20,        // 大一点
                 color: titleColor,
                 weight: FontWeight.w700,
+                style: FontStyle.italic, // 斜体
               ),
             ),
             if (description != null && description!.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(
-                description!,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: FontManager.customFontWithColor(
-                  size: 13,
-                  color: subGreen,
-                  weight: FontWeight.normal,
-                ),
-              ),
+              // 描述文字支持在文案中使用 \n 手动换行，
+              // 例如 '专注事业/学业，\n寻求跨越' 会强制分成两行。
+              ...description!
+                  .replaceAll(r'\n', '\n')
+                  .split('\n')
+                  .map(
+                    (line) => Text(
+                      line,
+                      textAlign: TextAlign.center,
+                      style: FontManager.customFontWithColor(
+                        size: 15,       // 较大字号，便于阅读
+                        color: subGreen,
+                        weight: FontWeight.normal,
+                      ),
+                    ),
+                  ),
             ],
           ],
         ),
@@ -392,9 +404,10 @@ class _CustomOptionText extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: FontManager.customFontWithColor(
-              size: 18,
+              size: 20,          // 和上面四个选项保持一致
               color: titleColor,
               weight: FontWeight.w700,
+              style: FontStyle.italic, // 斜体
             ),
           ),
         ),

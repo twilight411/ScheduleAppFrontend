@@ -57,6 +57,40 @@ class _LoginFlowPageState extends State<LoginFlowPage> {
   }
 
   void _goToOtherPhone() {
+    if (!_agreed) {
+      // 如果还没同意协议，先弹出模态框，让用户明确选择
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('提示'),
+            content: const Text('请先阅读并同意服务条款和隐私协议'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() => _agreed = true);
+                  Navigator.of(ctx).pop();
+                  _openOtherPhonePage();
+                },
+                child: const Text('同意并继续'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+    _openOtherPhonePage();
+  }
+
+  void _openOtherPhonePage() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => LoginOtherPhonePage(
@@ -85,7 +119,8 @@ class _LoginFlowPageState extends State<LoginFlowPage> {
       return LoginPhonePage(
         nickname: _nickname,
         defaultPhoneMasked: _defaultPhoneMasked,
-        onOneClickLogin: _agreed ? _goToOneClick : () {},
+        // 始终传入真正的跳转逻辑，由 LoginPhonePage 内部根据 agreed 决定是否放行
+        onOneClickLogin: _goToOneClick,
         onOtherPhone: _goToOtherPhone,
         agreed: _agreed,
         onAgreementChanged: (v) => setState(() => _agreed = v),

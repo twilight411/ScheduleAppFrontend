@@ -23,7 +23,6 @@ class _LoginOtherPhonePageState extends State<LoginOtherPhonePage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
 
-  bool _agreed = false;
   int _countdown = 0;
   Timer? _timer;
 
@@ -67,21 +66,12 @@ class _LoginOtherPhonePageState extends State<LoginOtherPhonePage> {
   void _onSubmit() {
     final phone = _phoneController.text.trim();
     final code = _codeController.text.trim();
-    if (phone.length == 11 && code.length >= 4 && _agreed) {
+    if (phone.length == 11 && code.length >= 4) {
       widget.onVerifySuccess();
     }
   }
 
   void _onLoginTap() {
-    if (!_agreed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('请先勾选服务条款和隐私协议'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
     final phone = _phoneController.text.trim();
     if (phone.length != 11) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -222,37 +212,8 @@ class _LoginOtherPhonePageState extends State<LoginOtherPhonePage> {
                   ),
                 ),
                 const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () => setState(() => _agreed = !_agreed),
-                        child: Icon(
-                          _agreed ? Icons.check_circle : Icons.radio_button_unchecked,
-                          size: 22,
-                          color: _white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _agreed = !_agreed),
-                          child: Text(
-                            '已经阅读并同意服务条款和隐私协议',
-                            style: FontManager.customFontWithColor(
-                              size: 13,
-                              color: _white,
-                              weight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
+                // 此处不再要求再次勾选协议，只保留顶部首次同意的结果；
+                // 如需展示说明，可在背景图或其他位置加静态文案。
                 Padding(
                   padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
                   child: SizedBox(
@@ -262,7 +223,8 @@ class _LoginOtherPhonePageState extends State<LoginOtherPhonePage> {
                       onPressed: _onLoginTap,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            (_phoneController.text.trim().length == 11 && _codeController.text.trim().length >= 4 && _agreed)
+                            (_phoneController.text.trim().length == 11 &&
+                                    _codeController.text.trim().length >= 4)
                                 ? _greenBtn
                                 : _greenBtn.withOpacity(0.6),
                         foregroundColor: _white,

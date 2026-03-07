@@ -36,10 +36,12 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
 
   // V2 状态
   static const List<V2BubbleOption> _v2Options = [
-    V2BubbleOption(title: '突破', description: '专注事业/学业，寻求跨越'),
-    V2BubbleOption(title: '修复', description: '关注健康/心理，整理旧疾'),
-    V2BubbleOption(title: '探索', description: '尝试兴趣/社交，发现新可能'),
-    V2BubbleOption(title: '稳定', description: '维系现状，寻找内心的平和'),
+    // 描述里的 \n 会在 OnboardingV2QuestionPage 中按行拆开显示，
+    // 例如「专注事业/学业」一行、「寻求跨越」一行，和设计图一致。
+    V2BubbleOption(title: '突破', description: '专注事业/学业\n寻求跨越'),
+    V2BubbleOption(title: '修复', description: '关注健康/心理\n整理旧疾'),
+    V2BubbleOption(title: '探索', description: '尝试兴趣/社交\n发现新可能'),
+    V2BubbleOption(title: '稳定', description: '维系现状\n寻找内心的平和'),
   ];
   int _v2SelectedIndex = -1;
   String _v2CustomText = '';

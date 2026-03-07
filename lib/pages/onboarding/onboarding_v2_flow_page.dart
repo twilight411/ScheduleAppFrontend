@@ -19,19 +19,20 @@ class _OnboardingV2FlowPageState extends State<OnboardingV2FlowPage> {
   static const List<V2BubbleOption> _options = [
     V2BubbleOption(
       title: '突破',
-      description: '专注事业/学业，寻求跨越',
+      // 使用 \n 手动控制换行，第一行「专注事业/学业」，第二行「寻求跨越」
+      description: '专注事业/学业\n寻求跨越',
     ),
     V2BubbleOption(
       title: '修复',
-      description: '关注健康/心理，整理旧疾',
+      description: '关注健康/心理\n整理旧疾',
     ),
     V2BubbleOption(
       title: '探索',
-      description: '尝试兴趣/社交，发现新可能',
+      description: '尝试兴趣/社交\n发现新可能',
     ),
     V2BubbleOption(
       title: '稳定',
-      description: '维系现状，寻找内心的平和',
+      description: '维系现状\n寻找内心的平和',
     ),
   ];
 
