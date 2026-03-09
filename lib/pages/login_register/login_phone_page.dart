@@ -23,7 +23,7 @@ class LoginPhonePage extends StatelessWidget {
 
   // ===== 字体大小统一出口 =====
   // 想调登录页上各块文字大小，只改下面这些常量即可：
-  static const double _kGreetingTextSize = 28.0;        // 顶部「你好, 昵称」
+  static const double _kGreetingTextSize = 35.0;        // 顶部「你好, 昵称」
   static const double _kDefaultPhoneLabelSize = 14.0;    // 「默认手机号」小字
   static const double _kDefaultPhoneNumberSize = 38.0;   // 中间脱敏手机号
   static const double _kOneClickButtonTextSize = 17.0;   // 「一键登录/注册」按钮文字

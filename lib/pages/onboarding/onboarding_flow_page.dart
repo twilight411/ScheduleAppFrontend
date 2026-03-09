@@ -45,6 +45,7 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
   ];
   int _v2SelectedIndex = -1;
   String _v2CustomText = '';
+  String _v2CustomDescription = '';
 
   @override
   void initState() {
@@ -111,6 +112,8 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
 
   void _onV1OptionSelected(int index) {
     setState(() => _selectedIndices[_currentPage] = index);
+    // 点完选项后自动跳转到下一题（最后一题则进入 V2）
+    _goNext();
   }
 
   @override
@@ -147,8 +150,11 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
         presetOptions: _v2Options,
         selectedIndex: _v2SelectedIndex,
         customText: _v2CustomText,
+        customDescription: _v2CustomDescription,
         onSelectionChanged: (i) => setState(() => _v2SelectedIndex = i),
         onCustomTextChanged: (t) => setState(() => _v2CustomText = t),
+        onCustomDescriptionChanged: (t) =>
+            setState(() => _v2CustomDescription = t),
         showLeftArrow: true,
         showRightArrow: true,
         onLeftArrowTap: _goBackToV1,

@@ -20,7 +20,9 @@ List<OnboardingQuestionItem> get onboardingV1Questions => [
 // - XxxSlotHeight      ：这一页单块选项的总高度（大字+小字+上下 padding）
 
 // 第 1 题 - 作息类型
-const double kQ1OptionsTopPadding = 5.0;
+// 将全局气泡与选项之间的间距略微减小（在 OnboardingQuestionPage 中从 16 调整为 5），
+// 为保持第 1 题的视觉位置不变，这里把本题的顶部间距从 5 调整为 9 
+const double kQ1OptionsTopPadding = 9.0;
 const double kQ1GapAfterFirst = 0.0;
 const double kQ1GapAfterSecond = 20.0;
 const double kQ1SlotHeight = 157.0; // 对应 _kOptionSlotHeight 当前的和：40 + 4 + 68 + 45

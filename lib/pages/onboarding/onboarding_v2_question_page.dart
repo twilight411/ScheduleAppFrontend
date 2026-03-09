@@ -22,8 +22,10 @@ class OnboardingV2QuestionPage extends StatefulWidget {
     required this.presetOptions,
     required this.selectedIndex,
     required this.customText,
+    required this.customDescription,
     required this.onSelectionChanged,
     required this.onCustomTextChanged,
+    required this.onCustomDescriptionChanged,
     this.showLeftArrow = false,
     this.showRightArrow = true,
     this.onLeftArrowTap,
@@ -36,8 +38,11 @@ class OnboardingV2QuestionPage extends StatefulWidget {
   /// 选中的预设索引 0..3，4 表示选的是自定义，-1 未选
   final int selectedIndex;
   final String customText;
+  /// 自定义选项的小字描述，可为空
+  final String customDescription;
   final ValueChanged<int> onSelectionChanged;
   final ValueChanged<String> onCustomTextChanged;
+  final ValueChanged<String> onCustomDescriptionChanged;
   final bool showLeftArrow;
   final bool showRightArrow;
   final VoidCallback? onLeftArrowTap;
@@ -67,11 +72,13 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
   bool _customEditing = false;
   final TextEditingController _customController = TextEditingController();
   final FocusNode _customFocus = FocusNode();
+  final TextEditingController _customDescController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _customController.text = widget.customText;
+    _customDescController.text = widget.customDescription;
   }
 
   @override
@@ -80,12 +87,16 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
     if (oldWidget.customText != widget.customText) {
       _customController.text = widget.customText;
     }
+    if (oldWidget.customDescription != widget.customDescription) {
+      _customDescController.text = widget.customDescription;
+    }
   }
 
   @override
   void dispose() {
     _customController.dispose();
     _customFocus.dispose();
+    _customDescController.dispose();
     super.dispose();
   }
 
@@ -95,6 +106,8 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
       setState(() => _customEditing = false);
       _customFocus.unfocus();
     }
+    // 点预设关键词后，直接走当前页面的「下一步」逻辑
+    widget.onRightArrowTap?.call();
   }
 
   void _onCustomTap() {
@@ -219,7 +232,7 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
     final positions = [
       Offset(w * 0.30, h * 0.13), // 突破 左上
       Offset(w * 0.78, h * 0.25), // 修复 右上
-      Offset(w * 0.27, h * 0.55), // 探索 左下
+      Offset(w * 0.25, h * 0.55), // 探索 左下
       Offset(w * 0.78, h * 0.60), // 稳定 右下
     ];
     // 「自定义」位置：改下面两个系数即可。0.5=水平居中，改小左移、改大右移；0.72=距顶 72%，改小上移、改大下移
@@ -249,11 +262,13 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
           left: w * kCustomPosX - optionWidth / 2,
           top: h * kCustomPosY - optionHeight / 2,
           child: _CustomOptionText(
-            displayText: widget.customText.isEmpty ? '自定义' : widget.customText,
+            title: widget.customText.isEmpty ? '自定义' : widget.customText,
+            description: widget.customDescription,
             isSelected: widget.selectedIndex == _kCustomIndex,
             isEditing: _customEditing,
             darkGreen: _darkGreen,
             lightGreen: _lightGreen,
+            subGreen: _subGreen,
             onTap: _onCustomTap,
           ),
         ),
@@ -271,27 +286,77 @@ class _OnboardingV2QuestionPageState extends State<OnboardingV2QuestionPage> {
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _customController,
-            focusNode: _customFocus,
-            autofocus: true,
-            maxLength: 20,
-            inputFormatters: [
-              FilteringTextInputFormatter.deny(RegExp(r'\n')),
-            ],
-            decoration: InputDecoration(
-              hintText: '输入你的关键词',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _customController,
+                focusNode: _customFocus,
+                autofocus: true,
+                maxLength: 20,
+                inputFormatters: [
+                  // 关键词只允许单行输入
+                  FilteringTextInputFormatter.deny(RegExp(r'\n')),
+                ],
+                decoration: InputDecoration(
+                  hintText: '输入你的关键词',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  counterText: '',
+                ),
+                style: FontManager.customFontWithColor(
+                  size: 20,
+                  color: _darkGreen,
+                  weight: FontWeight.w600,
+                ),
+                onChanged: (value) =>
+                    widget.onCustomTextChanged(value.trim()),
               ),
-              counterText: '',
-            ),
-            style: FontManager.customFontWithColor(
-              size: 20,
-              color: _darkGreen,
-              weight: FontWeight.w600,
-            ),
-            onChanged: (value) => widget.onCustomTextChanged(value.trim()),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _customDescController,
+                maxLength: 40,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: '补充一句小描述（可选）',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  counterText: '',
+                ),
+                style: FontManager.customFontWithColor(
+                  size: 15,
+                  color: _subGreen,
+                  weight: FontWeight.normal,
+                ),
+                onChanged: (value) => widget.onCustomDescriptionChanged(
+                  value.trim(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    setState(() => _customEditing = false);
+                    _customFocus.unfocus();
+                    FocusScope.of(context).unfocus();
+                    // 自定义填写完成后，直接走当前页面的「下一步」逻辑
+                    widget.onRightArrowTap?.call();
+                  },
+                  child: Text(
+                    '完成',
+                    style: FontManager.customFontWithColor(
+                      size: 16,
+                      color: _darkGreen,
+                      weight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -338,7 +403,7 @@ class _OptionText extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: FontManager.customFontWithColor(
-                size: 20,        // 大一点
+                size: 22,        // 第四个问题界面 关键字稍微放大
                 color: titleColor,
                 weight: FontWeight.w700,
                 style: FontStyle.italic, // 斜体
@@ -356,7 +421,7 @@ class _OptionText extends StatelessWidget {
                       line,
                       textAlign: TextAlign.center,
                       style: FontManager.customFontWithColor(
-                        size: 15,       // 较大字号，便于阅读
+                        size: 17,       // 小字也整体放大一点
                         color: subGreen,
                         weight: FontWeight.normal,
                       ),
@@ -373,19 +438,23 @@ class _OptionText extends StatelessWidget {
 /// 自定义选项：仅文字，无圆形背景
 class _CustomOptionText extends StatelessWidget {
   const _CustomOptionText({
-    required this.displayText,
+    required this.title,
+    this.description,
     required this.isSelected,
     required this.isEditing,
     required this.darkGreen,
     required this.lightGreen,
+    required this.subGreen,
     required this.onTap,
   });
 
-  final String displayText;
+  final String title;
+  final String? description;
   final bool isSelected;
   final bool isEditing;
   final Color darkGreen;
   final Color lightGreen;
+  final Color subGreen;
   final VoidCallback onTap;
 
   @override
@@ -397,19 +466,40 @@ class _CustomOptionText extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        child: Center(
-          child: Text(
-            displayText,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: FontManager.customFontWithColor(
-              size: 20,          // 和上面四个选项保持一致
-              color: titleColor,
-              weight: FontWeight.w700,
-              style: FontStyle.italic, // 斜体
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FontManager.customFontWithColor(
+                size: 22, // 和上面四个选项保持一致，略大
+                color: titleColor,
+                weight: FontWeight.w700,
+                style: FontStyle.italic, // 斜体
+              ),
             ),
-          ),
+            if (description != null && description!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              ...description!
+                  .replaceAll(r'\n', '\n')
+                  .split('\n')
+                  .map(
+                    (line) => Text(
+                      line,
+                      textAlign: TextAlign.center,
+                      style: FontManager.customFontWithColor(
+                        size: 17,
+                        color: subGreen,
+                        weight: FontWeight.normal,
+                      ),
+                    ),
+                  ),
+            ],
+          ],
         ),
       ),
     );

@@ -248,7 +248,7 @@ class OnboardingQuestionPage extends StatelessWidget {
               ),
             ),
             // 选项整体距上方的间距（改小=第一个选项框整体上移）
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
             // 三个选项：固定高度、不压缩，按设计稿；整区可滚动，避免小屏溢出
             Expanded(
               child: SingleChildScrollView(
@@ -364,81 +364,84 @@ class _OptionTile extends StatelessWidget {
       horizontalInset - 8 + (isRightAligned ? _kBlock2RightInset : 0),
       12,
     );
-    final content = Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: contentPadding,
-            child: Column(
-              crossAxisAlignment:
-                  isRightAligned ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: _kOptionTitleAreaHeight,
-                  child: Align(
-                    alignment: isRightAligned
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Padding(
-                      // 左右多留一点空白，避免斜体太贴边看起来被“削掉”
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        option.title,
-                        textAlign:
-                            isRightAligned ? TextAlign.right : TextAlign.left,
-                        style: FontManager.customFontWithColor(
-                          size: _kOptionTitleSize,
-                          color: isSelected
-                              ? _kOptionTitleColorSelected
-                              : _kOptionTitleColor,
-                          weight: _kOptionTitleWeight,
-                          style: FontStyle.italic,
-                        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        // 去掉点击/悬停时默认的灰色高亮效果
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        child: Padding(
+          padding: contentPadding,
+          child: Column(
+            crossAxisAlignment:
+                isRightAligned ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: _kOptionTitleAreaHeight,
+                child: Align(
+                  alignment:
+                      isRightAligned ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Padding(
+                    // 左右多留一点空白，避免斜体太贴边看起来被“削掉”
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      option.title,
+                      textAlign:
+                          isRightAligned ? TextAlign.right : TextAlign.left,
+                      style: FontManager.customFontWithColor(
+                        size: _kOptionTitleSize,
+                        color: isSelected
+                            ? _kOptionTitleColorSelected
+                            : _kOptionTitleColor,
+                        weight: _kOptionTitleWeight,
+                        style: FontStyle.italic,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: _kOptionGapTitleToDesc),
-                SizedBox(
-                  height: _kOptionDescAreaHeight,
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: isRightAligned
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: option.description
-                          .replaceAll(r'\n', '\n')
-                          .split('\n')
-                          .map(
-                            (line) => Padding(
-                              padding: const EdgeInsets.only(bottom: 2),
-                              child: Text(
-                                line,
-                                textAlign: isRightAligned
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                                style: FontManager.customFontWithColor(
-                                  size: _kOptionDescSize,
-                                  color: _kOptionDescColor,
-                                  weight: _kOptionDescWeight,
-                                ),
+              ),
+              const SizedBox(height: _kOptionGapTitleToDesc),
+              SizedBox(
+                height: _kOptionDescAreaHeight,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: isRightAligned
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: option.description
+                        .replaceAll(r'\n', '\n')
+                        .split('\n')
+                        .map(
+                          (line) => Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text(
+                              line,
+                              textAlign: isRightAligned
+                                  ? TextAlign.right
+                                  : TextAlign.left,
+                              style: FontManager.customFontWithColor(
+                                size: _kOptionDescSize,
+                                color: _kOptionDescColor,
+                                weight: _kOptionDescWeight,
                               ),
                             ),
-                          )
-                          .toList(),
-                    ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
     );
-    return content;
   }
 }

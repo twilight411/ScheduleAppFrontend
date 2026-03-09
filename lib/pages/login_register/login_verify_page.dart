@@ -23,7 +23,6 @@ class LoginVerifyPage extends StatefulWidget {
 
 class _LoginVerifyPageState extends State<LoginVerifyPage> {
   final TextEditingController _codeController = TextEditingController();
-  bool _agreed = false;
   int _countdown = 0;
   Timer? _timer;
 
@@ -62,26 +61,9 @@ class _LoginVerifyPageState extends State<LoginVerifyPage> {
     _startCountdown();
   }
 
-  void _onSubmit() {
-    final code = _codeController.text.trim();
-    if (code.length >= 4 && _agreed) {
-      widget.onVerifySuccess();
-    }
-  }
-
+  /// 当前未接入真实登录，点击登录直接进入主界面；协议已在上一页勾选，此处不再要求。
   void _onLoginTap() {
-    if (!_agreed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('请先勾选服务条款和隐私协议'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-    final code = _codeController.text.trim();
-    if (code.length < 4) return;
-    _onSubmit();
+    widget.onVerifySuccess();
   }
 
   @override
@@ -187,37 +169,6 @@ class _LoginVerifyPageState extends State<LoginVerifyPage> {
                 ),
                 const Spacer(),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () => setState(() => _agreed = !_agreed),
-                        child: Icon(
-                          _agreed ? Icons.check_circle : Icons.radio_button_unchecked,
-                          size: 22,
-                          color: _white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _agreed = !_agreed),
-                          child: Text(
-                            '已经阅读并同意服务条款和隐私协议',
-                            style: FontManager.customFontWithColor(
-                              size: 13,
-                              color: _white,
-                              weight: FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Padding(
                   padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
                   child: SizedBox(
                     width: double.infinity,
@@ -225,9 +176,7 @@ class _LoginVerifyPageState extends State<LoginVerifyPage> {
                     child: ElevatedButton(
                       onPressed: _onLoginTap,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: (_codeController.text.trim().length >= 4 && _agreed)
-                            ? _greenBtn
-                            : _greenBtn.withOpacity(0.6),
+                        backgroundColor: _greenBtn,
                         foregroundColor: _white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(26),

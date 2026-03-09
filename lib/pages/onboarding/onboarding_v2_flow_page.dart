@@ -38,6 +38,7 @@ class _OnboardingV2FlowPageState extends State<OnboardingV2FlowPage> {
 
   int _selectedIndex = -1;
   String _customText = '';
+  String _customDescription = '';
 
   Future<void> _completeAndGoHome() async {
     final prefs = await SharedPreferences.getInstance();
@@ -60,8 +61,11 @@ class _OnboardingV2FlowPageState extends State<OnboardingV2FlowPage> {
         presetOptions: _options,
         selectedIndex: _selectedIndex,
         customText: _customText,
+        customDescription: _customDescription,
         onSelectionChanged: (index) => setState(() => _selectedIndex = index),
         onCustomTextChanged: (text) => setState(() => _customText = text),
+        onCustomDescriptionChanged: (text) =>
+            setState(() => _customDescription = text),
         showLeftArrow: Navigator.of(context).canPop(),
         showRightArrow: true,
         onLeftArrowTap: () {
