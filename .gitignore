@@ -1,0 +1,45 @@
+# ===== 全仓库通用 =====
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*.tmp
+.env
+.env.local
+.env.*.local
+
+# ===== 密钥与本地配置（勿提交）=====
+*.pem
+*.key
+
+# ===== schedule_backend（Python）=====
+schedule_backend/.venv/
+schedule_backend/venv/
+schedule_backend/__pycache__/
+schedule_backend/**/__pycache__/
+schedule_backend/*.py[cod]
+schedule_backend/.pytest_cache/
+schedule_backend/.mypy_cache/
+schedule_backend/*.egg-info/
+schedule_backend/dist/
+schedule_backend/build/
+
+# ===== admin-ui（Node）=====
+admin-ui/node_modules/
+admin-ui/dist/
+
+# ===== schedule_app_flutter（Flutter / Dart）=====
+schedule_app_flutter/.dart_tool/
+schedule_app_flutter/.flutter-plugins
+schedule_app_flutter/.flutter-plugins-dependencies
+schedule_app_flutter/.packages
+schedule_app_flutter/pubspec.lock.bak
+schedule_app_flutter/build/
+schedule_app_flutter/coverage/
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example

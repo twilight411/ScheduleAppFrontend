@@ -1,0 +1,124 @@
+📱 前端开发总结
+一、架构职责
+前端 Flutter App 是用户交互的核心层，主要负责：
+用户输入界面
+日程任务录入
+聊天对话框
+日历视图展示
+植物状态可视化
+API 通信
+通过 API 网关与后端交互
+发送用户请求（自然语言输入）
+接收后端处理结果（任务解析、调度建议、冲突解决）
+本地状态管理
+使用 Provider 管理 Task、Wish、Plant 等模型
+本地存储使用 SharedPreferences
+缓存任务数据提升体验
+二、核心服务层
+1. ApiService - 统一 HTTP 通信
+提供 get() 和 post() 方法
+统一错误处理
+待配置：将 baseUrl 替换为实际后端地址
+2. AIService - AI 提示词管理
+为不同精灵类型提供对应的 system prompt
+对应后端的 Task Parser 模块需要使用相同的提示词
+支持群聊模式和单精灵私聊模式
+3. RemoteAIChatRepository - 远程 AI 交互
+封装 API 网关调用
+请求参数：
+message: 用户消息
+spiritType: 精灵类型（可选）
+isGroupChat: 是否群聊模式
+响应格式：{ "response": "AI回复文本" }
+三、对接 API 网关端点
+当前端需要调用以下端点（需后端实现）：
+方法	端点	功能	请求体
+POST	/api/ai/chat	AI 聊天	{"message", "spiritType", "isGroupChat"}
+POST	/api/tasks/parse	自然语言解析任务	{"text"}
+POST	/api/schedules/allocate	调度时间槽分配	{"task", "existingSchedules"}
+POST	/api/conflicts/detect	冲突检测	{"newTask"}
+POST	/api/conflicts/negotiate	冲突协商	{"conflict"}
+POST	/api/users/profile	用户画像更新	{"userPreferences", "feedback"}
+GET	/api/tasks	获取任务列表	无
+POST	/api/tasks	创建任务	{"task"}
+四、AI 功能实现要点
+意图识别流程：
+用户输入 → 前端发送给 API 网关 → 后端 Task Parser 解析
+返回解析结果（任务详情、时间、地点等）
+精灵对话流程：
+用户选择精灵 → 前端传递 spiritType → 后端 Agent System 处理
+后端根据提示词（从 SpiritPrompts 获取）构造 AI 回复
+任务智能调度：
+用户确认任务 → 前端发送任务信息 → 后端 Schedule Scheduler
+处理时间槽分配、重复任务、冲突检测
+冲突协商：
+检测到冲突 → 后端触发 Negotiation Engine
+前端展示协商选项（用户选择、AI 建议）
+🔧 后端开发总结
+一、架构职责
+后端层是系统的核心，通过 API 网关（FastAPI/Flask）统一入口，实现：
+API 网关
+请求路由与认证
+负载均衡
+请求分发到各模块
+五个核心 AI 模块
+模块一：Task Parser（任务解析器）
+功能：意图识别、实体提取、精灵分配
+输入：用户自然语言文本
+输出：结构化任务信息（时间、地点、参与者、任务内容）
+关键 AI 技术：NLP 模型（意图分类、NER）
+模块二：Agent System（精灵 Agent 系统）
+功能：5 个精灵实例、任务拆解、单精灵对话
+输入：解析后的任务 + 精灵类型
+输出：拆解后的子任务、对话回复
+关键 AI 技术：对话系统、任务规划
+模块三：Schedule Scheduler（日程调度器）
+功能：时间槽分配、冲突检测、重复任务
+输入：任务 + 现有日程
+输出：调度的时间段、冲突列表
+关键逻辑：日历算法、冲突规则引擎
+模块四：Negotiation Engine（协商引擎）
+功能：冲突识别、主持协商、共识判断
+输入：冲突信息
+输出：协商方案
+决策机制：用户选择优先、AI 建议、时间权重
+模块五：User Profile System（用户画像系统）
+功能：偏好管理、行为学习
+输入：用户行为数据、反馈
+输出：用户画像更新、智能建议
+关键 AI 技术：用户建模、推荐系统
+二、API 端点实现规范
+所有端点必须遵循以下格式：
+# POST /api/ai/chat - AI 聊天{  "message": "用户消息",  "spiritType": "light | water | soil | air | nutrition",  # 可选  "isGroupChat": false | true}# 响应{  "response": "AI 回复文本"}
+三、AI 集成要点
+System Prompt 构造规则：
+群聊模式：使用 _getGroupChatPrompt()
+单精灵模式：根据 spiritType 使用对应提示词
+提示词需与前端 SpiritPrompts 保持一致
+LLM 调用流程：
+后端调用 DeepSeek API
+API Key 存储在后端（不暴露给前端）
+传递完整的对话历史（system prompt + 用户消息）
+错误处理：
+统一错误码与消息格式
+网络超时、模型异常等情况需降级处理
+四、模块间数据流
+用户请求  ↓API 网关  ↓Task Parser（意图识别、实体提取）  ↓Agent System（精灵分配、任务拆解、对话）  ↓Schedule Scheduler（时间槽分配、冲突检测）  ↓（有冲突？）Negotiation Engine（冲突协商）  ↓User Profile System（学习反馈、更新画像）  ↓返回结果给前端
+五、技术栈建议
+API 网关：FastAPI（高性能 API 框架）
+数据库：PostgreSQL（用户任务、画像存储）
+AI 模型：DeepSeek API（对话生成）
+任务队列：Celery（异步 AI 处理）
+缓存：Redis（用户画像缓存）
+🤝 前后端对接重点
+1. 统一接口规范
+前端请求格式必须符合后端预期
+响应数据结构需要在两个团队间同步
+错误码约定：200 成功，4xx 客户端错误，5xx 服务端错误
+2. AI 对接关键点
+提示词同步：后端需实现与前端 SpiritPrompts 完全一致的 prompt 生成逻辑
+对话历史管理：后端维护上下文，前端只发送当前消息
+实时性：AI 请求可能耗时较长，前端需要加载动画；后端需优化 API 响应速度
+3. 任务数据结构
+前端 Task 模型结构：
+class Task {  String title;  String description;  DateTime startDate;  DateTime endDate;  SpiritType category;  // 对应精灵类型 
