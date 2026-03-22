@@ -2,6 +2,7 @@ import '../../models/onboarding_question.dart';
 import '../../utils/resource_manager.dart';
 
 /// 版本一的三道题数据（对应 01提问页版本1）
+/// 选项左右位置、与背景 A/B/C 对齐：改 `onboarding_question_page.dart` 顶部常量（见该文件头注释）。
 /// 换行：在字符串里直接打换行符 \n，例如 '第一行\n第二行' 会显示两行。
 List<OnboardingQuestionItem> get onboardingV1Questions => [
       _q1,
@@ -25,19 +26,20 @@ List<OnboardingQuestionItem> get onboardingV1Questions => [
 const double kQ1OptionsTopPadding = 9.0;
 const double kQ1GapAfterFirst = 0.0;
 const double kQ1GapAfterSecond = 20.0;
-const double kQ1SlotHeight = 157.0; // 对应 _kOptionSlotHeight 当前的和：40 + 4 + 68 + 45
+const double kQ1SlotHeight = 168.0; // 与 onboarding_question_page 默认槽高一致：52+4+88+24
 
 // 第 2 题 - 事件衔接方式
 const double kQ2OptionsTopPadding = 0.0;
 const double kQ2GapAfterFirst = 0.0;
 const double kQ2GapAfterSecond = 15.0;
-const double kQ2SlotHeight = 157.0;
+const double kQ2SlotHeight = 168.0;
 
 // 第 3 题 - 大项目偏好
 const double kQ3OptionsTopPadding = 5.0;
 const double kQ3GapAfterFirst = 0.0;
 const double kQ3GapAfterSecond = 20.0;
-const double kQ3SlotHeight = 157.0;
+// 第 3 题描述行多，略加高避免与背景大字视觉挤压
+const double kQ3SlotHeight = 182.0;
 
 // ===== 第 1 题：作息类型 =====
 final _q1 = OnboardingQuestionItem(
@@ -105,7 +107,9 @@ final _q3 = OnboardingQuestionItem(
   options: const [
     OnboardingOption(
       title: '蚂蚁搬家',
-      description: '我受不了一直干同一件事\n请帮我拆成每天只做 0.5-1小时的"小碎片"\n我喜欢慢慢磨',
+      // 换行按设计稿：「只做」单独成行，下一行再写 0.5-1小时…，避免窄屏在中间软折行连成一段
+      description:
+          '我受不了一直干同一件事\n请帮我拆成每天只做\n0.5-1小时的"小碎片"\n我喜欢慢慢磨',
     ),
     OnboardingOption(
       title: '稳扎稳打',
