@@ -120,7 +120,7 @@ class _OnboardingFlowPageState extends State<OnboardingFlowPage> {
   Widget build(BuildContext context) {
     if (_phase == OnboardingPhase.v1) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFFE2EEE0),
         body: PageView.builder(
           controller: _pageController,
           physics: const NeverScrollableScrollPhysics(),

@@ -23,21 +23,21 @@ List<OnboardingQuestionItem> get onboardingV1Questions => [
 // 第 1 题 - 作息类型
 // 将全局气泡与选项之间的间距略微减小（在 OnboardingQuestionPage 中从 16 调整为 5），
 // 为保持第 1 题的视觉位置不变，这里把本题的顶部间距从 5 调整为 9 
-const double kQ1OptionsTopPadding = 9.0;
+const double kQ1OptionsTopPadding = 4.0;
 const double kQ1GapAfterFirst = 0.0;
-const double kQ1GapAfterSecond = 20.0;
+const double kQ1GapAfterSecond = 8.0;
 const double kQ1SlotHeight = 168.0; // 与 onboarding_question_page 默认槽高一致：52+4+88+24
 
 // 第 2 题 - 事件衔接方式
 const double kQ2OptionsTopPadding = 0.0;
 const double kQ2GapAfterFirst = 0.0;
-const double kQ2GapAfterSecond = 15.0;
+const double kQ2GapAfterSecond = 6.0;
 const double kQ2SlotHeight = 168.0;
 
 // 第 3 题 - 大项目偏好
-const double kQ3OptionsTopPadding = 5.0;
+const double kQ3OptionsTopPadding = 2.0;
 const double kQ3GapAfterFirst = 0.0;
-const double kQ3GapAfterSecond = 20.0;
+const double kQ3GapAfterSecond = 8.0;
 // 第 3 题描述行多，略加高避免与背景大字视觉挤压
 const double kQ3SlotHeight = 182.0;
 

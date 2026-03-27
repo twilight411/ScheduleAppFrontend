@@ -49,7 +49,11 @@ class _BasicInfoFlowPageState extends State<BasicInfoFlowPage> {
     if (_step == 0) {
       return BasicInfoIdentityPage(
         selectedIndex: _identityIndex,
-        onSelected: (i) => setState(() => _identityIndex = i),
+        // 与引导页一致：点选身份后自动进入昵称页，无需再点右上角箭头
+        onSelected: (i) => setState(() {
+          _identityIndex = i;
+          _step = 1;
+        }),
         onNext: _goNext,
         showLeftArrow: false,
         onLeftArrowTap: null,

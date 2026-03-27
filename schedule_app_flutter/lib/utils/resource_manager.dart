@@ -256,9 +256,10 @@ class Profile {
 class Onboarding {
   Onboarding._();
 
-  String get background => 'assets/images/onboarding/bg.png';
+  /// 三题提问页底图（设计稿「背景.png」内容；资源文件用 ASCII 名避免部分平台打包/加载异常）
+  String get background => 'assets/images/onboarding/onboarding_question_bg.png';
 
-  /// 版本一提问页背景（含叶子和 A/B/C 字母，无需单独贴叶子和字母）
+  /// 整图背景（含叶子与字母），历史兜底资源；提问页请勿用作主背景。
   String get backgroundWithLeavesAndLetters =>
       'assets/images/onboarding/bg_with_leaves_and_letters.png';
 

@@ -80,8 +80,9 @@ class _OnboardingV1FlowPageState extends State<OnboardingV1FlowPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 与提问页底图一致：避免 PNG 透明区透出纯黑（见 OnboardingQuestionPage 说明）
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFFE2EEE0),
       body: PageView.builder(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),

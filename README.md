@@ -9,6 +9,7 @@
 ```
 ScheduleApp/
 ├── schedule_app_flutter/   # Flutter 客户端（光合日历 App）
+├── init_ui_sandbox/        # 独立沙盒：仅调初始化/引导 UI，满意后再迁回主 Flutter 工程
 ├── schedule_backend/       # FastAPI + PostgreSQL + AI 接口
 └── admin-ui/               # Vue 3 用量监控，构建产物输出到后端的 static/admin
 ```
@@ -37,13 +38,23 @@ npm run dev
 
 开发时访问说明见 `admin-ui/README.md`（Vite 代理 `/api`）。
 
-### 3. Flutter
+### 3. Flutter（主 App）
 
 ```powershell
 cd schedule_app_flutter
 flutter pub get
 flutter run
 ```
+
+### 3b. Flutter 初始化界面沙盒（可选）
+
+```powershell
+cd init_ui_sandbox
+flutter pub get
+flutter run
+```
+
+说明见 `init_ui_sandbox/README.md`（与主工程解耦，调完再迁移 UI）。
 
 真机连本机后端时，在代码中配置 `ApiService.overrideBaseUrl`（见 `schedule_backend/docs/移动端对接指南.md`）。
 
