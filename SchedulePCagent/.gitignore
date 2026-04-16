@@ -1,0 +1,17 @@
+.env
+node_modules/
+dist/
+target/
+*.log
+.DS_Store
+
+# 本地 SQLite（含 WAL）；保留 data/README.md
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+/data/export/
+
+# 本地 harness 测试库（勿入库）
+/temp-test-data/*.db
+/temp-test-data/*.db-wal
+/temp-test-data/*.db-shm

@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Main + bubble: timeline, foreground, window helpers","local":true,"windows":["main","bubble"],"permissions":["core:default","core:window:allow-start-dragging","core:window:allow-hide","core:window:allow-show","core:window:allow-set-focus"]}}

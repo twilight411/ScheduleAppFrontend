@@ -46,3 +46,6 @@ schedule_app_flutter/coverage/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json.example
+
+# Cursor Agent Skills（本地/IDE 用，不入库）
+**/.cursor/skills/
