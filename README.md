@@ -76,6 +76,18 @@ flutter run
 
 更细的命令与「远程已有 Flutter 根目录」时的合并方式见：[docs/推送到GitHub步骤.md](./docs/推送到GitHub步骤.md)。
 
+## Git 历史说明（协作者必读）
+
+仓库曾误将根目录下超大归档（如 `schedule_app_flutter.rar` / `.zip`、`ScheduleApp.rar`，合计约 2GB+）提交进历史，导致 `git push` 频繁失败。已通过 **`git filter-repo` 从历史中移除这些文件** 并 **`git push --force` 更新远端 `main`**。
+
+因此请你知晓：
+
+1. **改写历史**：上述操作之后，`main` 上**所有提交的 commit hash 都与改写前不同**（同一段内容在 Git 里是「新的时间线」）。
+2. **若你本地仍是改写前克隆的仓库**：不要与当前远端做普通 merge 以免历史纠缠。请任选其一：
+   - **推荐**：删除本地目录后 **重新 `git clone`**；
+   - 或：确认无未提交改动后执行 `git fetch origin` 再 **`git reset --hard origin/main`**，使本地 `main` 与远端完全一致。
+3. **根目录那类大压缩包**已在 `.gitignore` 中忽略，请勿再提交进 Git；大文件请用网盘或 Release 附件等方式分发。
+
 ## 分支建议
 
 - 使用 **`main`** 作为唯一主分支存放上述三目录；功能开发用 `feat/xxx` 等分支，**不要用单独分支长期只存后端或只存管理台**。
