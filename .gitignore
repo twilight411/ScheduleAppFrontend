@@ -2,6 +2,10 @@
 learning-notes/
 
 # ===== 全仓库通用 =====
+# 根目录超大归档（勿提交；曾导致 git push ~2GB 失败）
+/schedule_app_flutter.rar
+/schedule_app_flutter.zip
+/ScheduleApp.rar
 .DS_Store
 Thumbs.db
 *.log
