@@ -10,17 +10,24 @@
  * - 根容器：rounded-full + overflow-hidden → 圆形可视区域；勿改 h-screen/w-screen（否则可能高度为 0）。
  * - 主图：object-contain 保整张图；改 object-cover 可铺满圆但可能裁切。
  * - 右键菜单：见下方 BubbleContextMenu 与 MENU_* 常量（文案、宽度、样式）；菜单用 Portal 挂 body，避免被圆形容器裁切。
+ * - 精灵皮肤：images/spirit_*.png，右键「切换外观」；持久化 localStorage key GUANGHE_BUBBLE_SKIN。
  */
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import bubbleBg from "../images/光合日历气泡球背景.png";
+import {
+  type BubbleSkinId,
+  readBubbleSkin,
+  SKIN_SRC,
+  SPIRIT_MENU_ITEMS,
+  writeBubbleSkin,
+} from "./bubbleSkins";
 
 /** 右键菜单预估宽度（用于贴边clamp，与下方 Tailwind min-w 大致一致） */
 const MENU_ESTIMATE_W = 152;
-/** 顶栏 + 两行菜单项 + 内边距（改菜单结构时同步改这里，便于贴边 clamp） */
-const MENU_ESTIMATE_H = 118;
+/** 顶栏 + 功能项 + 切换外观区块（改菜单结构时同步改这里，便于贴边 clamp） */
+const MENU_ESTIMATE_H = 300;
 
 type MenuPos = { x: number; y: number };
 
@@ -38,7 +45,13 @@ function clampMenuPosition(clientX: number, clientY: number): MenuPos {
 
 export default function BubbleBall() {
   const [menuPos, setMenuPos] = useState<MenuPos | null>(null);
+  const [skinId, setSkinId] = useState<BubbleSkinId>(() => readBubbleSkin());
   const menuPanelRef = useRef<HTMLDivElement>(null);
+
+  const setSkin = useCallback((id: BubbleSkinId) => {
+    setSkinId(id);
+    writeBubbleSkin(id);
+  }, []);
 
   /**
    * 小窗内 #root 默认无高度，h-full 会塌成 0；这里把 html/body/#root 拉满，
@@ -119,6 +132,18 @@ export default function BubbleBall() {
     void hideBubble();
   }, [closeMenu, hideBubble]);
 
+  const onSelectSkin = useCallback(
+    (id: BubbleSkinId) => {
+      setSkin(id);
+      closeMenu();
+    },
+    [closeMenu, setSkin]
+  );
+
+  const onRestoreInitialSkin = useCallback(() => {
+    onSelectSkin("initial");
+  }, [onSelectSkin]);
+
   const onContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -154,7 +179,7 @@ export default function BubbleBall() {
             若希望铺满圆可改为 object-cover（可能裁掉边缘）。
           */}
           <img
-            src={bubbleBg}
+            src={SKIN_SRC[skinId]}
             alt=""
             className="pointer-events-none h-full w-full rounded-full object-contain shadow-none"
             style={{ filter: "none" }}
@@ -169,8 +194,11 @@ export default function BubbleBall() {
               ref={menuPanelRef}
               x={menuPos.x}
               y={menuPos.y}
+              skinId={skinId}
               onOpenMain={onOpenMain}
               onHideBubble={onHideBubble}
+              onSelectSkin={onSelectSkin}
+              onRestoreInitialSkin={onRestoreInitialSkin}
             />,
             document.body
           )
@@ -182,13 +210,27 @@ export default function BubbleBall() {
 type BubbleContextMenuProps = {
   x: number;
   y: number;
+  skinId: BubbleSkinId;
   onOpenMain: () => void;
   onHideBubble: () => void;
+  onSelectSkin: (id: BubbleSkinId) => void;
+  onRestoreInitialSkin: () => void;
 };
 
 /** 挂到 document.body，避免被气泡根节点 overflow-hidden + rounded-full 裁掉 */
 const BubbleContextMenu = forwardRef<HTMLDivElement, BubbleContextMenuProps>(
-  function BubbleContextMenu({ x, y, onOpenMain, onHideBubble }, ref) {
+  function BubbleContextMenu(
+    {
+      x,
+      y,
+      skinId,
+      onOpenMain,
+      onHideBubble,
+      onSelectSkin,
+      onRestoreInitialSkin,
+    },
+    ref
+  ) {
     return (
       <div
         ref={ref}
@@ -215,6 +257,37 @@ const BubbleContextMenu = forwardRef<HTMLDivElement, BubbleContextMenuProps>(
           onClick={onHideBubble}
         >
           隐藏气泡球
+        </button>
+        <div
+          className="border-t border-slate-100 px-3 py-1.5 text-[11px] font-medium text-slate-500"
+          role="presentation"
+        >
+          切换外观
+        </div>
+        {SPIRIT_MENU_ITEMS.map(({ id, label }) => {
+          const active = skinId === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={active}
+              className={`block w-full px-3 py-2 text-left text-[13px] hover:bg-emerald-50 active:bg-emerald-100 ${
+                active ? "bg-emerald-50/80 font-medium text-emerald-900" : ""
+              }`}
+              onClick={() => onSelectSkin(id)}
+            >
+              {label}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          role="menuitem"
+          className="block w-full border-t border-slate-100 px-3 py-1.5 text-left text-[11px] text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+          onClick={onRestoreInitialSkin}
+        >
+          恢复初始外观
         </button>
       </div>
     );

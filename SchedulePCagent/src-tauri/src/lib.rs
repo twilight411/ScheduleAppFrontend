@@ -2,6 +2,8 @@ mod ark;
 
 use harness_core::{current_foreground, default_db_path, RecordingState, TimelineStore};
 use tauri::Manager;
+use tauri::PhysicalPosition;
+use tauri::Runtime;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -125,6 +127,21 @@ fn show_bubble_window(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// 气泡球首次出现：主显示器工作区右下角（留出边距，避开任务栏）。
+fn position_bubble_bottom_right<R: Runtime>(bubble: &tauri::WebviewWindow<R>) {
+    let Ok(Some(monitor)) = bubble.primary_monitor() else {
+        return;
+    };
+    let wa = monitor.work_area();
+    let Ok(outer) = bubble.outer_size() else {
+        return;
+    };
+    let margin: i32 = 16;
+    let x = wa.position.x + wa.size.width as i32 - outer.width as i32 - margin;
+    let y = wa.position.y + wa.size.height as i32 - outer.height as i32 - margin;
+    let _ = bubble.set_position(PhysicalPosition::new(x, y));
+}
+
 fn truncate_chars(s: &str, max: usize) -> String {
     let mut out = String::with_capacity(max.saturating_add(32));
     for (i, ch) in s.chars().enumerate() {
@@ -181,6 +198,7 @@ pub fn run() {
         .setup(|app| {
             if let Some(bubble) = app.get_webview_window("bubble") {
                 let _ = bubble.set_shadow(false);
+                position_bubble_bottom_right(&bubble);
             }
             Ok(())
         })
