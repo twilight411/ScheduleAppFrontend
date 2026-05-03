@@ -115,6 +115,68 @@ class _AIChatOverlayState extends State<AIChatOverlay> {
     }
   }
 
+  /// 构建协商决策选项
+  Widget _buildNegotiationOptions(ChatProvider chatProvider) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '请选择方案：',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.deepPurple.shade700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          ...List.generate(chatProvider.negotiationOptions.length, (index) {
+            final option = chatProvider.negotiationOptions[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: SizedBox(
+                height: 36,
+                child: OutlinedButton(
+                  onPressed: chatProvider.isSending
+                      ? null
+                      : () => chatProvider.resolveNegotiation(index),
+                  style: OutlinedButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    side: BorderSide(color: Colors.deepPurple.shade200),
+                    minimumSize: Size.zero,
+                  ),
+                  child: Text(
+                    option['label'] ?? '方案 ${index + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.deepPurple.shade800,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ChatProvider>(
@@ -195,6 +257,15 @@ class _AIChatOverlayState extends State<AIChatOverlay> {
                                       return ChatBubble(message: message);
                                     },
                                   ),
+                            ),
+
+                          // 协商决策选项（展开且需要用户决策时显示）
+                          if (_isExpanded && chatProvider.needsUserDecision)
+                            Positioned(
+                              left: 15,
+                              right: 15,
+                              bottom: 60,
+                              child: _buildNegotiationOptions(chatProvider),
                             ),
 
                           // 许愿瓶按钮（只在展开时显示，输入框左侧）

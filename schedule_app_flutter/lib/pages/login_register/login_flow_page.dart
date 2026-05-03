@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/auth_service.dart';
 import '../../services/user_identity_service.dart';
 import 'login_phone_page.dart';
 import 'login_verify_page.dart';
@@ -109,10 +110,38 @@ class _LoginFlowPageState extends State<LoginFlowPage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kLoginDoneKey, true);
     await UserIdentityService.instance.setLoggedInUserIdFromPhone(phone);
+
+    // 调后端 auth 拿 JWT token（AI 聊天等接口需要）
+    await _ensureBackendAuth(phone);
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const MainContainerView()),
     );
+  }
+
+  /// 用手机号派生的 dev 账号注册/登录后端，获取 token
+  Future<void> _ensureBackendAuth(String phone) async {
+    final email = 'user_$phone@schedule.dev';
+    const password = 'schedule123';
+    final nickname = _nickname.isNotEmpty ? _nickname : '用户$phone';
+    try {
+      await AuthService.instance.register(
+        name: nickname,
+        email: email,
+        password: password,
+      );
+    } catch (_) {
+      // 邮箱已注册则走登录
+      try {
+        await AuthService.instance.login(
+          email: email,
+          password: password,
+        );
+      } catch (_) {
+        // 登录也失败，token 为空，AI 聊天会提示未认证
+      }
+    }
   }
 
   @override

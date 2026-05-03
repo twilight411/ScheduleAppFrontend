@@ -354,83 +354,148 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 愿望瓶按钮（可选）
-            IconButton(
-              icon: const Icon(Icons.auto_awesome),
-              onPressed: () {
-                // TODO: 跳转到愿望瓶页面
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('愿望瓶功能待实现')),
-                );
-              },
-              tooltip: '愿望瓶',
-            ),
-            
-            // 输入框
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage(ResourceManager.aiChat.inputBoxBg),
-                    fit: BoxFit.fill,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
+            // 协商决策选项
+            if (chatProvider.needsUserDecision)
+              _buildNegotiationOptions(chatProvider),
+            Row(
+              children: [
+                // 愿望瓶按钮（可选）
+                IconButton(
+                  icon: const Icon(Icons.auto_awesome),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('愿望瓶功能待实现')),
+                    );
+                  },
+                  tooltip: '愿望瓶',
                 ),
-                child: TextField(
-                  controller: _textController,
-                  focusNode: _focusNode,
-                  enabled: !isSending, // 发送时禁用输入框
-                  decoration: InputDecoration(
-                    hintText: '和小精灵们聊聊...',
-                    border: OutlineInputBorder(
+
+                // 输入框
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(ResourceManager.aiChat.inputBoxBg),
+                        fit: BoxFit.fill,
+                      ),
                       borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
                     ),
-                    filled: false,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                    child: TextField(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      enabled: !isSending,
+                      decoration: InputDecoration(
+                        hintText: '和小精灵们聊聊...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      maxLines: null,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: isSending ? null : (_) => _sendMessage(),
                     ),
                   ),
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: isSending ? null : (_) => _sendMessage(),
                 ),
-              ),
+
+                const SizedBox(width: 8),
+
+                // 发送按钮
+                if (isSending)
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    color: _hasText
+                        ? Theme.of(context).primaryColor
+                        : Colors.grey,
+                    onPressed: _hasText ? _sendMessage : null,
+                    tooltip: '发送',
+                  ),
+              ],
             ),
-            
-            const SizedBox(width: 8),
-            
-            // 发送按钮（显示加载状态或发送图标）
-            if (isSending)
-              // 加载状态：显示加载图标
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).primaryColor,
-                    ),
-                  ),
-                ),
-              )
-            else
-              // 正常状态：显示发送按钮
-              IconButton(
-                icon: const Icon(Icons.send),
-                color: _hasText 
-                    ? Theme.of(context).primaryColor 
-                    : Colors.grey,
-                onPressed: _hasText ? _sendMessage : null,
-                tooltip: '发送',
-              ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 构建协商决策选项按钮
+  Widget _buildNegotiationOptions(ChatProvider chatProvider) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text(
+              '请选择方案：',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.deepPurple.shade700,
+              ),
+            ),
+          ),
+          ...List.generate(chatProvider.negotiationOptions.length, (index) {
+            final option = chatProvider.negotiationOptions[index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: OutlinedButton(
+                onPressed: chatProvider.isSending
+                    ? null
+                    : () => chatProvider.resolveNegotiation(index),
+                style: OutlinedButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  side: BorderSide(color: Colors.deepPurple.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      option['label'] ?? '方案 ${index + 1}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.deepPurple.shade800,
+                      ),
+                    ),
+                    if (option['description'] != null)
+                      Text(
+                        option['description'],
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

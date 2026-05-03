@@ -21,18 +21,14 @@ class ChatBubble extends StatelessWidget {
   /// 获取气泡背景颜色
   Color _getBackgroundColor() {
     if (message.role == ChatRole.user) {
-      // 用户消息：浅灰色背景
-      // iOS: 使用浅灰色，而不是蓝色
       return Colors.grey[300]!.withOpacity(0.8);
+    } else if (message.isOrchestrator) {
+      // 主持人/系统消息：紫色调
+      return Colors.deepPurple.withOpacity(0.15);
+    } else if (message.spiritType != null) {
+      return message.spiritType!.color.withOpacity(0.3);
     } else {
-      // 助手消息
-      if (message.spiritType != null) {
-        // 有精灵类型：使用精灵颜色，透明度 0.3
-        return message.spiritType!.color.withOpacity(0.3);
-      } else {
-        // 无精灵类型（群聊）：灰色背景，透明度 0.2
-        return Colors.grey.withOpacity(0.2);
-      }
+      return Colors.grey.withOpacity(0.2);
     }
   }
 
@@ -52,17 +48,20 @@ class ChatBubble extends StatelessWidget {
     final backgroundColor = _getBackgroundColor();
     final textColor = _getTextColor();
     final isUser = message.role == ChatRole.user;
-    final hasSpiritIcon = message.role == ChatRole.assistant && message.spiritType != null;
+    final hasSpiritIcon = message.role == ChatRole.assistant &&
+        message.spiritType != null &&
+        !message.isOrchestrator;
+    final hasSpeakerInfo =
+        message.role == ChatRole.assistant && message.speakerName != null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 左侧：精灵头像（仅 assistant 且有 spiritType 时显示）
-          // iOS中使用精灵贴图作为头像，而不是系统图标
-          // 尺寸应该和许愿瓶一样大（44x44）
+          // 左侧：精灵头像
           if (hasSpiritIcon)
             Padding(
               padding: const EdgeInsets.only(right: 8, top: 4),
@@ -72,7 +71,6 @@ class ChatBubble extends StatelessWidget {
                 height: 44,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
-                  // 如果图片加载失败，使用备用图标
                   return Container(
                     width: 44,
                     height: 44,
@@ -103,14 +101,34 @@ class ChatBubble extends StatelessWidget {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-                textAlign: isUser ? TextAlign.right : TextAlign.left,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 精灵名称 / 主持人名称前缀
+                  if (hasSpeakerInfo)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '${message.speakerEmoji ?? ''} ${message.speakerName!}',
+                        style: TextStyle(
+                          color: message.isOrchestrator
+                              ? Colors.deepPurple.shade700
+                              : Colors.grey.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  SelectableText(
+                    message.text,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                    textAlign: isUser ? TextAlign.right : TextAlign.left,
+                  ),
+                ],
               ),
             ),
           ),

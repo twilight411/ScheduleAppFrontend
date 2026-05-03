@@ -39,7 +39,7 @@ extension SpiritTypeColor on SpiritType {
       case SpiritType.air:
         return Colors.grey;
       case SpiritType.nutrition:
-        return Colors.green;
+        return Color(0xFFFFB6C1); // 浅粉色
     }
   }
 }

@@ -23,11 +23,23 @@ class ChatMessage extends Equatable {
   /// 消息时间戳
   final DateTime timestamp;
 
+  /// 精灵 emoji（协商群聊时显示，如 "💡"）
+  final String? speakerEmoji;
+
+  /// 精灵/主持人名称（协商群聊时显示，如 "光精灵"、"主持人"）
+  final String? speakerName;
+
+  /// 是否是主持人消息
+  final bool isOrchestrator;
+
   const ChatMessage({
     required this.role,
     required this.text,
     this.spiritType,
     required this.timestamp,
+    this.speakerEmoji,
+    this.speakerName,
+    this.isOrchestrator = false,
   });
 
   /// 创建用户消息的便捷构造函数
@@ -56,18 +68,44 @@ class ChatMessage extends Equatable {
     );
   }
 
+  /// 创建协商消息（精灵发言 / 主持人调停）
+  factory ChatMessage.negotiation({
+    required String text,
+    String? speakerEmoji,
+    String? speakerName,
+    SpiritType? spiritType,
+    bool isOrchestrator = false,
+    DateTime? timestamp,
+  }) {
+    return ChatMessage(
+      role: ChatRole.assistant,
+      text: text,
+      spiritType: spiritType,
+      timestamp: timestamp ?? DateTime.now(),
+      speakerEmoji: speakerEmoji,
+      speakerName: speakerName,
+      isOrchestrator: isOrchestrator,
+    );
+  }
+
   /// 复制并修改部分字段
   ChatMessage copyWith({
     ChatRole? role,
     String? text,
     SpiritType? spiritType,
     DateTime? timestamp,
+    String? speakerEmoji,
+    String? speakerName,
+    bool? isOrchestrator,
   }) {
     return ChatMessage(
       role: role ?? this.role,
       text: text ?? this.text,
       spiritType: spiritType ?? this.spiritType,
       timestamp: timestamp ?? this.timestamp,
+      speakerEmoji: speakerEmoji ?? this.speakerEmoji,
+      speakerName: speakerName ?? this.speakerName,
+      isOrchestrator: isOrchestrator ?? this.isOrchestrator,
     );
   }
 
@@ -78,6 +116,9 @@ class ChatMessage extends Equatable {
       'text': text,
       'spiritType': spiritType?.name,
       'timestamp': timestamp.millisecondsSinceEpoch,
+      'speakerEmoji': speakerEmoji,
+      'speakerName': speakerName,
+      'isOrchestrator': isOrchestrator,
     };
   }
 
@@ -98,6 +139,9 @@ class ChatMessage extends Equatable {
       timestamp: DateTime.fromMillisecondsSinceEpoch(
         (json['timestamp'] as int?) ?? DateTime.now().millisecondsSinceEpoch,
       ),
+      speakerEmoji: json['speakerEmoji'] as String?,
+      speakerName: json['speakerName'] as String?,
+      isOrchestrator: json['isOrchestrator'] as bool? ?? false,
     );
   }
 
@@ -107,5 +151,8 @@ class ChatMessage extends Equatable {
         text,
         spiritType,
         timestamp,
+        speakerEmoji,
+        speakerName,
+        isOrchestrator,
       ];
 }

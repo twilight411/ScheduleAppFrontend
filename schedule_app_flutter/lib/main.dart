@@ -16,6 +16,12 @@ import 'providers/task_provider.dart';
 import 'providers/wish_provider.dart';
 import 'repositories/local_plant_repository.dart';
 import 'repositories/remote_ai_chat_repository.dart';
+import 'repositories/remote_notification_repository.dart';
+import 'repositories/remote_profile_repository.dart';
+import 'repositories/remote_report_repository.dart';
+import 'repositories/remote_schedule_repository.dart';
+import 'repositories/remote_task_repository.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,12 +29,15 @@ void main() async {
   // 初始化日期格式化（中文）
   await initializeDateFormatting('zh_CN', null);
 
+  // 已登录用户恢复本地 token
+  await AuthService.instance.getAccessToken();
+
   runApp(const MyApp());
 }
 
-/// 获取初始化流程状态：V1 -> V2 -> 03 基本信息 -> 04 登录注册 -> 主界面
-/// 调试模式下强制从 V1 开始，方便反复查看
-Future<({bool v1Done, bool v2Done, bool basicInfoDone, bool loginDone})> getOnboardingStatus() async {
+/// 获取初始化流程状态
+Future<({bool v1Done, bool v2Done, bool basicInfoDone, bool loginDone})>
+    getOnboardingStatus() async {
   if (kDebugMode) {
     return (v1Done: false, v2Done: false, basicInfoDone: false, loginDone: false);
   }
@@ -47,8 +56,27 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // ===== 数据源（远程仓库，各页面可通过 Provider.of / context.read 获取）=====
+        Provider<RemoteTaskRepository>(
+          create: (_) => RemoteTaskRepository(),
+        ),
+        Provider<RemoteProfileRepository>(
+          create: (_) => RemoteProfileRepository(),
+        ),
+        Provider<RemoteScheduleRepository>(
+          create: (_) => RemoteScheduleRepository(),
+        ),
+        Provider<RemoteNotificationRepository>(
+          create: (_) => RemoteNotificationRepository(),
+        ),
+        Provider<RemoteReportRepository>(
+          create: (_) => RemoteReportRepository(),
+        ),
+        // ===== 状态管理 =====
         ChangeNotifierProvider<TaskProvider>(
-          create: (_) => TaskProvider(),
+          create: (_) => TaskProvider(
+            remoteRepository: RemoteTaskRepository(),
+          ),
         ),
         ChangeNotifierProvider<WishProvider>(
           create: (_) => WishProvider(),
@@ -71,7 +99,13 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        home: FutureBuilder<({bool v1Done, bool v2Done, bool basicInfoDone, bool loginDone})>(
+        home: FutureBuilder<
+            ({
+              bool v1Done,
+              bool v2Done,
+              bool basicInfoDone,
+              bool loginDone
+            })>(
           future: getOnboardingStatus(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
@@ -104,4 +138,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

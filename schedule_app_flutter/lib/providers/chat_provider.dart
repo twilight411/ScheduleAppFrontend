@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
+import '../models/ai_chat_result.dart';
 import '../models/chat_message.dart';
 import '../models/spirit_type.dart';
-import '../models/task.dart';
 import '../repositories/ai_chat_repository.dart';
 import '../repositories/local_ai_chat_repository.dart';
+import '../repositories/remote_ai_chat_repository.dart';
+import '../services/api_service.dart';
 import 'task_provider.dart';
 
 /// 聊天状态管理类
@@ -34,6 +38,15 @@ class ChatProvider extends ChangeNotifier {
 
   /// 是否正在发送消息（供 UI 使用）
   bool get isSending => _isSending;
+
+  /// 协商会话 ID（need_user_input 事件后设置）
+  String? negotiationId;
+
+  /// 协商决策选项
+  List<Map<String, dynamic>> negotiationOptions = [];
+
+  /// 是否需要用户决策
+  bool get needsUserDecision => negotiationOptions.isNotEmpty && negotiationId != null;
 
   ChatProvider({
     AIChatRepository? repository,
@@ -71,85 +84,237 @@ class ChatProvider extends ChangeNotifier {
 
   /// 发送消息并获取 AI 回复
   ///
-  /// 这是主要的发送消息方法，会：
-  /// 1. 先添加用户消息到列表
-  /// 2. 添加一条"正在思考..."的占位助手消息
-  /// 3. 调用 repository 获取 AI 回复
-  /// 4. 移除占位消息，添加真正的助手消息
-  /// 5. 处理错误情况
+  /// 这是主要的发送消息方法：
+  /// - **私聊**：POST 单次请求，替换占位消息
+  /// - **群聊**：SSE 流式协商，逐条添加精灵发言
   ///
   /// [text] 用户消息文本
   Future<void> sendMessage(String text) async {
-    // 防止重复发送
-    if (_isSending) {
-      return;
-    }
+    if (_isSending) return;
+    if (text.trim().isEmpty) return;
 
-    // 如果消息为空，直接返回
-    if (text.trim().isEmpty) {
-      return;
-    }
+    _isSending = true;
+    sendUserMessage(text);
 
+    if (isGroupChat) {
+      await _sendNegotiation(text);
+    } else {
+      await _sendPrivateChat(text);
+    }
+  }
+
+  /// 私聊：单次 POST 请求
+  Future<void> _sendPrivateChat(String text) async {
     ChatMessage? loadingMessage;
-
     try {
-      _isSending = true;
-
-      // 1. 先添加用户消息到列表
-      sendUserMessage(text);
-
-      // 2. 添加一条"正在思考..."的占位助手消息
       loadingMessage = ChatMessage.assistant(
         text: '正在思考...',
-        spiritType: isGroupChat ? null : selectedSpirit,
+        spiritType: selectedSpirit,
       );
       addMessage(loadingMessage);
 
-      // 3. 调用 repository 获取 AI 回复
-      // 根据当前模式决定参数：
-      // - 群聊模式：isGroupChat=true, spiritType=null
-      // - 私聊模式：isGroupChat=false, spiritType=selectedSpirit
       final aiResult = await _repository.sendMessage(
         message: text,
-        spiritType: isGroupChat ? null : selectedSpirit,
-        isGroupChat: isGroupChat,
+        spiritType: selectedSpirit,
+        isGroupChat: false,
       );
 
-      // 4. 移除占位消息
       messages.remove(loadingMessage);
       notifyListeners();
 
-      // 5. 将 AI 创建的日程写入本地安排界面
-      final tp = taskProvider;
-      if (tp != null && aiResult.createdTasks.isNotEmpty) {
+      // 先发 AI 回复
+      sendAssistantMessage(aiResult.reply, selectedSpirit);
+
+      // 如果 AI 自动创建了任务，追加一条确认消息
+      if (aiResult.createdTasks.isNotEmpty) {
         for (final map in aiResult.createdTasks) {
-          try {
-            tp.addTask(Task.fromJson(map));
-          } catch (_) {
-            // 单条解析失败不影响聊天展示
-          }
+          final title = map['title'] ?? '新任务';
+          final scheduled = map['scheduled'] == true;
+          final timeInfo = map['time_start'] != null
+              ? ' (${map['date'] ?? ''} ${map['time_start']}-${map['time_end'] ?? ''})'
+              : '';
+          addMessage(ChatMessage.negotiation(
+            text: '已创建任务「$title」$timeInfo${scheduled ? '，已排入日程' : ''}',
+            speakerEmoji: '✅',
+            speakerName: '任务助手',
+          ));
         }
       }
-
-      // 6. 添加真正的助手消息到列表
-      sendAssistantMessage(
-        aiResult.reply,
-        isGroupChat ? null : selectedSpirit,
-      );
     } catch (e) {
-      // 6. 处理错误情况：移除占位消息，添加错误提示消息
-      final lm = loadingMessage;
-      if (lm != null) {
-        messages.remove(lm);
+      if (loadingMessage != null) {
+        messages.remove(loadingMessage);
         notifyListeners();
       }
-      sendAssistantMessage(
-        '抱歉，我遇到了一些问题：$e',
-        isGroupChat ? null : selectedSpirit,
-      );
+      sendAssistantMessage('抱歉，我遇到了一些问题：$e', selectedSpirit);
     } finally {
       _isSending = false;
     }
+  }
+
+  /// 群聊：SSE 流式协商
+  Future<void> _sendNegotiation(String text) async {
+    // 清除上一轮协商状态
+    negotiationId = null;
+    negotiationOptions = [];
+    notifyListeners();
+
+    // 添加 loading 消息
+    final loadingMessage = ChatMessage.negotiation(
+      text: '正在发起精灵协商...',
+      speakerName: '系统',
+      isOrchestrator: true,
+    );
+    addMessage(loadingMessage);
+
+    final repo = _repository;
+    if (repo is! RemoteAIChatRepository) {
+      // 本地模式降级
+      messages.remove(loadingMessage);
+      sendAssistantMessage('群聊模式需要连接后端服务', null);
+      _isSending = false;
+      return;
+    }
+
+    try {
+      print('[Chat] Starting negotiation...');
+      final stream = repo.negotiate(triggerReason: text);
+
+      // 加 120 秒超时（多轮 LLM 协商耗时较长）
+      final timedStream = stream.timeout(
+        const Duration(seconds: 120),
+        onTimeout: (sink) {
+          sink.addError(TimeoutException('协商超时，请重试'));
+          sink.close();
+        },
+      );
+
+      await for (final event in timedStream) {
+        print('[Chat] Got event: ${event.runtimeType}');
+        // 移除 loading 消息（首次收到事件时）
+        if (messages.contains(loadingMessage)) {
+          messages.remove(loadingMessage);
+        }
+
+        switch (event) {
+          case NegotiationSpiritMessage():
+            addMessage(ChatMessage.negotiation(
+              text: event.content,
+              speakerEmoji: event.speakerEmoji,
+              speakerName: '${event.speakerName} · 第${event.round}轮',
+              spiritType: _spiritCodeToType(event.speaker),
+            ));
+
+          case NegotiationOrchestrator():
+            addMessage(ChatMessage.negotiation(
+              text: event.content,
+              speakerEmoji: '🎯',
+              speakerName: '主持人 · 第${event.round}轮',
+              isOrchestrator: true,
+            ));
+
+          case NegotiationConsensus():
+            addMessage(ChatMessage.negotiation(
+              text: '✅ ${event.summary}',
+              speakerEmoji: '🤝',
+              speakerName: '协商共识',
+              isOrchestrator: true,
+            ));
+
+          case NegotiationNeedUserInput():
+            negotiationId = event.negotiationId;
+            negotiationOptions = event.options;
+            addMessage(ChatMessage.negotiation(
+              text: event.message,
+              speakerEmoji: '🤔',
+              speakerName: '需要你来决定',
+              isOrchestrator: true,
+            ));
+            notifyListeners();
+
+          case NegotiationError():
+            addMessage(ChatMessage.negotiation(
+              text: '⚠ ${event.message}',
+              speakerEmoji: '⚠',
+              speakerName: '系统',
+              isOrchestrator: true,
+            ));
+
+          case NegotiationDone():
+            break;
+        }
+      }
+    } on TimeoutException catch (_) {
+      if (messages.contains(loadingMessage)) {
+        messages.remove(loadingMessage);
+      }
+      addMessage(ChatMessage.negotiation(
+        text: '协商超时，请检查网络后重试',
+        speakerEmoji: '⚠',
+        speakerName: '系统',
+        isOrchestrator: true,
+      ));
+    } catch (e) {
+      if (messages.contains(loadingMessage)) {
+        messages.remove(loadingMessage);
+      }
+      addMessage(ChatMessage.negotiation(
+        text: '协商出错：$e',
+        speakerEmoji: '⚠',
+        speakerName: '系统',
+        isOrchestrator: true,
+      ));
+    } finally {
+      _isSending = false;
+      notifyListeners();
+    }
+  }
+
+  /// 用户选择协商方案
+  Future<void> resolveNegotiation(int optionIndex) async {
+    if (negotiationId == null || _isSending) return;
+
+    _isSending = true;
+    notifyListeners();
+
+    try {
+      final resp = await ApiService.instance.post(
+        endpoint: '/ai/negotiate/resolve',
+        body: {
+          'negotiation_id': negotiationId,
+          'decision': 'option_$optionIndex',
+        },
+      );
+
+      final data = resp['data'] as Map<String, dynamic>?;
+      final summary = data?['summary'] ?? '已选择方案';
+      addMessage(ChatMessage.negotiation(
+        text: '✅ $summary',
+        speakerEmoji: '✅',
+        speakerName: '协商结果',
+        isOrchestrator: true,
+      ));
+    } catch (e) {
+      addMessage(ChatMessage.negotiation(
+        text: '提交决策失败：$e',
+        speakerEmoji: '⚠',
+        speakerName: '系统',
+        isOrchestrator: true,
+      ));
+    } finally {
+      // 清除协商状态
+      negotiationId = null;
+      negotiationOptions = [];
+      _isSending = false;
+      notifyListeners();
+    }
+  }
+
+  /// 精灵代码 → SpiritType 枚举
+  static SpiritType? _spiritCodeToType(String code) {
+    for (final st in SpiritType.values) {
+      if (st.name == code) return st;
+    }
+    return null;
   }
 
   /// 切换群聊/私聊模式
@@ -159,15 +324,12 @@ class ChatProvider extends ChangeNotifier {
     isGroupChat = !isGroupChat;
 
     if (isGroupChat) {
-      // 切换到群聊模式：清空选中的精灵
       selectedSpirit = null;
-      // 可选：添加一条系统提示消息
-      // sendAssistantMessage("已切换到群聊模式", null);
-    } else {
-      // 切换到私聊模式
-      // 可选：添加一条系统提示消息
-      // sendAssistantMessage("已切换到私聊模式，请选择一个精灵", null);
     }
+
+    // 切换模式时清除协商状态
+    negotiationId = null;
+    negotiationOptions = [];
 
     notifyListeners();
   }

@@ -53,3 +53,6 @@ schedule_app_flutter/coverage/
 
 # Cursor Agent Skills（本地/IDE 用，不入库）
 **/.cursor/skills/
+
+# ===== spirit-scheduler 4（新后端，暂不推送）=====
+spirit-scheduler 4/
