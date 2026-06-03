@@ -54,4 +54,4 @@ flutter run
 
 ## License
 
-Private / 面试展示用 — 请勿将 `.env` 与密钥提交到 Git。
+请勿将 `.env` 与密钥提交到 Git。
