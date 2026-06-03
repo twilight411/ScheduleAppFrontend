@@ -1,8 +1,22 @@
-# ===== 本地学习笔记（不推送远程）=====
+# ===== 仅本地保留，不推送远程 =====
+docs/
 learning-notes/
+init_ui_sandbox/
+.deploy/
+.github/
+
+# 已迁到独立分支的项目（本地可继续开发，main 不跟踪）
+admin-ui/
+ProductWeb/
+SchedulePCagent/
+
+# 历史后端压缩包/多版本目录（见 legacy/* 与 archive/* 分支）
+/spirit-scheduler 4/
+/spirit-scheduler 5/
+/spirit-scheduler 5(1)/
+/spirit-scheduler 6/
 
 # ===== 全仓库通用 =====
-# 根目录超大归档（勿提交；曾导致 git push ~2GB 失败）
 /schedule_app_flutter.rar
 /schedule_app_flutter.zip
 /ScheduleApp.rar
@@ -15,7 +29,7 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# ===== 密钥与本地配置（勿提交）=====
+# ===== 密钥与本地配置 =====
 *.pem
 *.key
 
@@ -30,12 +44,12 @@ schedule_backend/.mypy_cache/
 schedule_backend/*.egg-info/
 schedule_backend/dist/
 schedule_backend/build/
+schedule_backend/*.db
+schedule_backend/*.sqlite3
+schedule_backend/logs/
+schedule_backend/certs/
 
-# ===== admin-ui（Node）=====
-admin-ui/node_modules/
-admin-ui/dist/
-
-# ===== schedule_app_flutter（Flutter / Dart）=====
+# ===== schedule_app_flutter（Flutter）=====
 schedule_app_flutter/.dart_tool/
 schedule_app_flutter/.flutter-plugins
 schedule_app_flutter/.flutter-plugins-dependencies
@@ -51,8 +65,8 @@ schedule_app_flutter/coverage/
 !.vscode/extensions.json
 !.vscode/settings.json.example
 
-# Cursor Agent Skills（本地/IDE 用，不入库）
+# Cursor
 **/.cursor/skills/
 
-# ===== spirit-scheduler 4（新后端，暂不推送）=====
-spirit-scheduler 4/
+# 本地 APK / 大文件
+*.apk

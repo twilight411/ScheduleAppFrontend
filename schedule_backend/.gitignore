@@ -1,9 +1,53 @@
-venv/
-.venv/
+# Python
 __pycache__/
 *.py[cod]
-.env
 *.egg-info/
-.eggs/
 dist/
 build/
+.eggs/
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Certificates
+certs/
+*.pem
+*.key
+
+# Test
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 本地备份 / 临时交付包
+*.bak
+app/files (31)/

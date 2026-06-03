@@ -1,44 +1,32 @@
-# 光合日历 · 全栈 Monorepo
+# 光合日历（ScheduleApp）
 
-本目录为**单体仓库**结构，包含移动端（Flutter）、后端（FastAPI）与用量管理后台（Vue）。
+移动端日程与 AI 陪伴应用：**Flutter 客户端** + **Python 后端 API**。
 
-远程仓库：[twilight411/ScheduleAppFrontend](https://github.com/twilight411/ScheduleAppFrontend)（建议后续在 GitHub 将仓库重命名为 `ScheduleApp` 等更贴切的名字）
-
-## 目录结构
+## 仓库结构
 
 ```
 ScheduleApp/
-├── schedule_app_flutter/   # Flutter 客户端（光合日历 App）
-├── init_ui_sandbox/        # 独立沙盒：仅调初始化/引导 UI，满意后再迁回主 Flutter 工程
-├── schedule_backend/       # FastAPI + PostgreSQL + AI 接口
-└── admin-ui/               # Vue 3 用量监控，构建产物输出到后端的 static/admin
+├── schedule_app_flutter/   # Flutter 客户端
+└── schedule_backend/       # FastAPI 后端（当前主分支版本）
 ```
 
-## 快速启动（开发）
+## 快速开始
 
-### 1. 后端
+### 后端
 
 ```powershell
 cd schedule_backend
-uv sync
-cp .env.example .env   # 编辑填入数据库与 AI Key
-uv run alembic upgrade head
-uv run python run.py
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env   # 配置数据库与 API Key
+# 按项目内 migrations / alembic 说明初始化数据库后：
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-默认 API：<http://localhost:8000>，文档：<http://localhost:8000/docs>
+API 文档：启动后访问 `http://localhost:8000/docs`（以实际路由为准）。
 
-### 2. 管理台（可选）
-
-```powershell
-cd admin-ui
-npm install
-npm run dev
-```
-
-开发时访问说明见 `admin-ui/README.md`（Vite 代理 `/api`）。
-
-### 3. Flutter（主 App）
+### 客户端
 
 ```powershell
 cd schedule_app_flutter
@@ -46,48 +34,24 @@ flutter pub get
 flutter run
 ```
 
-### 3b. Flutter 初始化界面沙盒（可选）
+真机调试时，在客户端配置后端 Base URL（见 `schedule_app_flutter/lib/services/api_service.dart`）。
 
-```powershell
-cd init_ui_sandbox
-flutter pub get
-flutter run
-```
+## 其他分支
 
-说明见 `init_ui_sandbox/README.md`（与主工程解耦，调完再迁移 UI）。
-
-真机连本机后端时，在代码中配置 `ApiService.overrideBaseUrl`（见 `schedule_backend/docs/移动端对接指南.md`）。
-
-## 文档索引
-
-| 说明 | 路径 |
+| 分支 | 说明 |
 |------|------|
-| 后端运行与数据库 | `schedule_backend/docs/如何运行后端.md` |
-| HTTP API | `schedule_backend/docs/API接口文档.md` |
-| 移动端对接 | `schedule_backend/docs/移动端对接指南.md` |
-| AI / 群聊 / 日程工具 | `schedule_backend/docs/AI日程与群聊设计说明.md` |
+| `archive/monorepo-2026-06-03` | 重组前的完整 monorepo 快照 |
+| `legacy/admin-ui` | Vue 用量管理后台 |
+| `legacy/backend-schedule-backend` | 早期 FastAPI 后端（uv/pyproject 版） |
+| `legacy/product-web` | 产品 Web 原型 |
+| `legacy/schedule-pc-agent` | 桌面端 Tauri 实验 |
+| `backend` | 历史 Flutter-only 根目录布局 |
 
-## 推送到 GitHub 的说明
+## 技术栈
 
-- **不要提交**：各目录下的 `.env`、`node_modules/`、`.venv/`、`build/` 等（见根目录 `.gitignore`）。
-- 若远程仓库**当前根目录就是 Flutter 工程**（`lib/`、`pubspec.yaml` 在根），与本地「`schedule_app_flutter/` 子目录」不一致时，有两种做法：
-  1. **推荐**：在远程新建空默认分支或备份后，将本地本仓库作为新结构一次性推送（或 PR 把原根文件移入 `schedule_app_flutter/`）。
-  2. 或：本地把 `schedule_app_flutter` 里的内容暂时拷到临时目录，克隆远程，在克隆根下创建 `schedule_app_flutter` 文件夹并拷入，再复制进 `schedule_backend`、`admin-ui`，提交推送。
+- **客户端**：Flutter 3.x、Provider
+- **后端**：FastAPI、SQLAlchemy、Alembic、Docker（可选）
 
-更细的命令与「远程已有 Flutter 根目录」时的合并方式见：[docs/推送到GitHub步骤.md](./docs/推送到GitHub步骤.md)。
+## License
 
-## Git 历史说明（协作者必读）
-
-仓库曾误将根目录下超大归档（如 `schedule_app_flutter.rar` / `.zip`、`ScheduleApp.rar`，合计约 2GB+）提交进历史，导致 `git push` 频繁失败。已通过 **`git filter-repo` 从历史中移除这些文件** 并 **`git push --force` 更新远端 `main`**。
-
-因此请你知晓：
-
-1. **改写历史**：上述操作之后，`main` 上**所有提交的 commit hash 都与改写前不同**（同一段内容在 Git 里是「新的时间线」）。
-2. **若你本地仍是改写前克隆的仓库**：不要与当前远端做普通 merge 以免历史纠缠。请任选其一：
-   - **推荐**：删除本地目录后 **重新 `git clone`**；
-   - 或：确认无未提交改动后执行 `git fetch origin` 再 **`git reset --hard origin/main`**，使本地 `main` 与远端完全一致。
-3. **根目录那类大压缩包**已在 `.gitignore` 中忽略，请勿再提交进 Git；大文件请用网盘或 Release 附件等方式分发。
-
-## 分支建议
-
-- 使用 **`main`** 作为唯一主分支存放上述三目录；功能开发用 `feat/xxx` 等分支，**不要用单独分支长期只存后端或只存管理台**。
+Private / 面试展示用 — 请勿将 `.env` 与密钥提交到 Git。
