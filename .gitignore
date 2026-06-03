@@ -21,6 +21,7 @@ SchedulePCagent/
 /schedule_app_flutter.zip
 /ScheduleApp.rar
 .DS_Store
+__MACOSX/
 Thumbs.db
 *.log
 *.swp
