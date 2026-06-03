@@ -7,7 +7,8 @@
 ```
 ScheduleApp/
 ├── schedule_app_flutter/   # Flutter 客户端
-└── schedule_backend/       # FastAPI 后端（当前主分支版本）
+├── schedule_backend/       # FastAPI 后端（当前主分支版本）
+└── ProductWeb/             # 产品官网（Vercel 部署，Root Directory 填 ProductWeb）
 ```
 
 ## 快速开始

@@ -7,8 +7,11 @@ init_ui_sandbox/
 
 # 已迁到独立分支的项目（本地可继续开发，main 不跟踪）
 admin-ui/
-ProductWeb/
 SchedulePCagent/
+
+# ProductWeb（Vercel 官网；不提交依赖与构建产物）
+ProductWeb/node_modules/
+ProductWeb/dist/
 
 # 历史后端压缩包/多版本目录（见 legacy/* 与 archive/* 分支）
 /spirit-scheduler 4/
